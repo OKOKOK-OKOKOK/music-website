@@ -342,8 +342,8 @@ CREATE TABLE `mv`
 (
     `id`           INT(10) UNSIGNED                 NOT NULL AUTO_INCREMENT,
     `song_id`      INT(10) UNSIGNED                 COMMENT '关联歌曲ID',
-    `title`        VARCHAR(100)                     DEFAULT 'title'NOT NULL COMMENT 'MV标题（可不同于歌曲名）',
-    `version`      VARCHAR(50)                               DEFAULT 'official' COMMENT '版本（official官方版/live现场版/dance舞蹈版等）',
+    `title`        VARCHAR(100)                     DEFAULT 'title' COMMENT 'MV标题（可不同于歌曲名）',
+    `version`      ENUM ('official','live现场版','dance舞蹈版','二创','OST','其他')                              DEFAULT 'official' COMMENT '版本（official官方版/live现场版/dance舞蹈版等）',
     `resolution`   ENUM ('SD','HD','FHD','4K','8K')  DEFAULT 'HD' COMMENT '分辨率',
     `storage_key`   VARCHAR(255)                     NOT NULL COMMENT '存储路径,先试着本地存储',
     `duration`     INT(10) UNSIGNED                  COMMENT '时长（秒）',

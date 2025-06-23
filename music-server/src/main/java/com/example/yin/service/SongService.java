@@ -27,4 +27,7 @@ public interface SongService extends IService<Song> {
     R songOfSingerName(String name);
 
     R updateSongLrc(MultipartFile lrcFile, int id);
+
+    //用于检测歌曲是否存在,mv上传过程需要检测歌曲是否存在
+    boolean existSong(Integer songId);
 }

@@ -155,7 +155,11 @@ public class MinioUploadController {
         }
     }
 
-
+    //TODO: 分片上传
+    //TODO: 断点续传
+    //TODO: 上传进度条
+    //TODO: 上传失败重试机制
+    //TODO: 参数检测机制
     //mv文件上传
     public static String uploadMvFile(MultipartFile file) {
         try {
@@ -177,6 +181,7 @@ public class MinioUploadController {
             throw new RuntimeException(e);
         }
     }
+
 
     //mv封面
     public static String uploadMvCoverFile(MultipartFile file) {

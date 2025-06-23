@@ -12,6 +12,7 @@ import com.example.yin.model.domain.Song;
 import com.example.yin.model.request.MvRequest;
 import com.example.yin.model.request.SongRequest;
 import com.example.yin.service.MvService;
+import com.example.yin.service.SongService;
 import io.minio.MinioClient;
 import io.minio.RemoveObjectArgs;
 import org.springframework.beans.BeanUtils;
@@ -22,14 +23,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 
 @Service
 public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvService {
+
     @Autowired
     private MvMapper mvMapper;
 
@@ -39,201 +38,107 @@ public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvServic
     @Autowired
     MinioClient minioClient;
 
-    @Override
-    public R addMv(MvRequest mvRequest, MultipartFile mvFile){
-        Mv mv = new Mv();
-        BeanUtils.copyProperties(mvRequest, mv);
-        String pic = "/img/songPic/tubiao.jpg";
-        String fileName = mvFile.getOriginalFilename();
-        String s = MinioUploadController.uploadFile(mvFile);
-        String storeUrlPath = "/"+mvBucketName+"/" + fileName;
-        mv.setCreateTime(new Date());
-        mv.setUpdateTime(new Date());
-        mv.setStorageKey(storeUrlPath);
+    @Autowired
+    private SongService songService; // 用于校验歌曲是否存在
 
-        if (s.equals("File uploaded successfully!")&&mvMapper.insert(mv) > 0) {
-            return R.success("上传成功", storeUrlPath);
-        } else {
-            return R.error("上传失败");
+    // 允许的视频类型
+    private static final List<String> ALLOWED_VIDEO_TYPES = Arrays.asList(
+            "video/mp4", "video/avi", "video/mov", "video/wmv", "video/flv"
+    );
+
+    // 版本枚举值 (根据新数据库设计更新)
+    private static final Set<String> VALID_VERSIONS = new HashSet<>(
+            Arrays.asList("official", "live现场版", "dance舞蹈版", "二创", "OST", "其他")
+    );
+
+    // 分辨率枚举值
+    private static final Set<String> VALID_RESOLUTIONS = new HashSet<>(
+            Arrays.asList("SD", "HD", "FHD", "4K", "8K")
+    );
+
+    @Override
+    public R addMv(MvRequest mvRequest, MultipartFile mvFile) {
+        try {
+            // 1. 基本参数空值校验
+            if (mvRequest == null) {
+                return R.error("请求参数不能为空");
+            }
+            if (mvFile == null || mvFile.isEmpty()) {
+                return R.error("MV文件不能为空");
+            }
+
+//            // 2. 必填字段校验
+//            if (mvRequest.getSongId() == null) {
+//                return R.error("关联歌曲ID不能为空");
+//            } else {
+//                // 3. 关联歌曲存在性校验 - 使用正确的方法
+//                if (!songService.existSong(mvRequest.getSongId())) {
+//                    return R.error("关联歌曲不存在，ID: " + mvRequest.getSongId());
+//                }
+//            }
+            // 4. 枚举值格式校验
+            if (mvRequest.getVersion() != null && !VALID_VERSIONS.contains(mvRequest.getVersion())) {
+                return R.error("无效的版本类型，允许值: " + String.join(",", VALID_VERSIONS));
+            }
+            if (mvRequest.getResolution() != null && !VALID_RESOLUTIONS.contains(mvRequest.getResolution())) {
+                return R.error("无效的分辨率，允许值: " + String.join(",", VALID_RESOLUTIONS));
+            }
+
+            // 5. 数值范围校验
+            if (mvRequest.getDuration() != null && mvRequest.getDuration() <= 0) {
+                return R.error("时长必须大于0");
+            }
+            if (mvRequest.getFileSize() != null && mvRequest.getFileSize() <= 0) {
+                return R.error("文件大小必须大于0");
+            }
+
+            // 6. 字符串长度校验
+            if (mvRequest.getDirector() != null && mvRequest.getDirector().length() > 100) {
+                return R.error("导演名称长度不能超过100字符");
+            }
+
+            // 7. 日期逻辑校验（发行日期不能晚于当前日期）
+            if (mvRequest.getReleaseDate() != null && mvRequest.getReleaseDate().after(new Date())) {
+                return R.error("发行日期不能晚于当前日期");
+            }
+
+            // 8. 文件类型校验
+            String contentType = mvFile.getContentType();
+            if (contentType == null || !ALLOWED_VIDEO_TYPES.contains(contentType)) {
+                return R.error("不支持的文件类型，允许类型: " + String.join(",", ALLOWED_VIDEO_TYPES));
+            }
+
+            // 9. 文件大小校验（可选，如果前端已提供大小可对比）
+            if (mvRequest.getFileSize() != null &&
+                    mvRequest.getFileSize() != mvFile.getSize()) {
+                return R.error("文件大小不一致");
+            }
+            // 所有校验通过，执行上传
+            Mv mv = new Mv();
+            BeanUtils.copyProperties(mvRequest, mv);
+            String fileName = mvFile.getOriginalFilename();
+            String s = MinioUploadController.uploadMvFile(mvFile);
+            String storeUrlPath = "/" + mvBucketName + "/" + fileName;
+            mv.setCreateTime(new Date());
+            mv.setUpdateTime(new Date());
+            mv.setStorageKey(storeUrlPath);
+
+            // 设置文件实际大小（如果前端未提供）
+            if (mv.getFileSize() == null) {
+                mv.setFileSize(mvFile.getSize());
+            }
+
+            if (s.equals("File uploaded successfully!") && mvMapper.insert(mv) > 0) {
+                return R.success("上传成功", storeUrlPath);
+            } else {
+                return R.error("上传失败");
+            }
+        } catch (Exception e) {
+            log.error("MV上传失败", e);
+            return R.error("系统错误: " + e.getMessage());
         }
     }
 
-//    @Override
-//    public R addMv(MvRequest addMvRequest, MultipartFile mvFile) {
-//
-//        Mv mv = new Mv();
-//        BeanUtils.copyProperties(addMvRequest, mv);
-//        String pic= "/img/songPic/tubiao.jpg";//TODO: 要修改路径
-//
-//        return null;
-//    }
-
-
-//    @Override
-//    public R addMv(MvRequest addMvRequest, MultipartFile mvFile) {
-//        // 1. 参数校验
-//        if (mvFile == null || mvFile.isEmpty()) {
-//            return R.error("MV文件不能为空");
-//        }
-//
-//        // 2. 创建MV实体并复制属性
-//        Mv mv = new Mv();
-//        BeanUtils.copyProperties(addMvRequest, mv);//?
-//
-//        // 3. 上传MV文件到MinIO
-//        String fileName = mvFile.getOriginalFilename();
-//        String uploadResult = MinioUploadController.uploadMvFile(mvFile);
-//        String storeUrlPath = "/" + mvBucketName + "/" +addMvRequest.getResolution() + "/" + fileName;
-//
-//        // 4. 设置MV属性
-//        mv.setStorageKey(storeUrlPath);
-//        mv.setCreateTime(new Date());
-//        mv.setUpdateTime(new Date());
-//
-//        // 设置默认封面（如果请求中未提供）
-////        if (addMvRequest.getPicUrl() == null || addMvRequest.getPicUrl().isEmpty()) {
-////            mv.setPicUrl("/img/mv/default.jpg");
-////        }
-//
-//        // 5. 保存到数据库
-//        if (uploadResult.equals("File uploaded successfully!") && mvMapper.insert(mv) > 0) {
-//            return R.success("MV添加成功", new HashMap<String, Object>() {{
-//                put("id", mv.getId());
-//                put("url", storeUrlPath);
-//            }});
-//        } else {
-//            // 上传失败时尝试删除已上传的文件
-//            try {
-//                minioClient.removeObject(
-//                        RemoveObjectArgs.builder()
-//                                .bucket(mvBucketName)
-//                                .object(fileName)
-//                                .build());
-//            } catch (Exception e) {
-//                log.error("删除上传失败的文件出错", e);
-//            }
-//            return R.error("MV添加失败");
-//        }
-//    }
-//
-//@Override
-//public R addMv(MvRequest addMvRequest, MultipartFile mvFile) {
-//
-//
-//    // 1. 参数校验
-//    // 重点检查：确保 songId 存在
-//    if (addMvRequest.getSongId() == null) {
-//        return R.error("必须指定关联歌曲ID");
-//    }
-//    // 检查其他必填字段
-//    if (StringUtils.isEmpty(addMvRequest.getTitle())) {
-//        return R.error("MV标题不能为空");
-//    }
-//    if (mvFile == null || mvFile.isEmpty()) {
-//        return R.error("MV文件不能为空");
-//    }
-//
-//    // 2. 创建MV实体并复制属性
-//    Mv mv = new Mv();
-//    try {
-//        BeanUtils.copyProperties(addMvRequest, mv);
-//    } catch (Exception e) {
-//        log.error("属性复制失败", e);
-//        return R.error("请求参数转换失败: " + e.getMessage());
-//    }
-//
-//    // 3. 生成安全的文件名和对象键
-//    String originalFilename = mvFile.getOriginalFilename();
-//    String safeFilename = originalFilename != null ?
-//            originalFilename.replaceAll("[^a-zA-Z0-9\\.\\-]", "_") :
-//            "mv_" + System.currentTimeMillis();
-//
-//    String resolution = addMvRequest.getResolution() != null ?
-//            addMvRequest.getResolution() : "HD";
-//
-//    // 创建MinIO对象键（与uploadMvFile方法匹配）
-//    String objectKey = "mv/" + safeFilename;
-//    String storeUrlPath = "/" + mvBucketName + "/" + resolution + "/" + safeFilename;
-//
-//    // 4. 上传MV文件到MinIO
-//    String uploadResult = null;
-//    try {
-//        uploadResult = MinioUploadController.uploadMvFile(mvFile);
-//
-//        // 检查上传结果
-//        if (!"File uploaded successfully!".equals(uploadResult)) {
-//            log.error("MinIO上传失败: {}");
-//            return R.error("MV文件上传失败: " + uploadResult);
-//        }
-//    } catch (Exception e) {
-//        log.error("文件上传过程中发生异常", e);
-//        return R.error("文件上传异常: " + e.getMessage());
-//    }
-//
-//    // 5. 设置MV属性
-//    try {
-//        // 注意：这里存储的是完整路径（与上传路径一致）
-//        mv.setStorageKey(storeUrlPath);
-//        mv.setCreateTime(new Date());
-//        mv.setUpdateTime(new Date());
-//
-//        // 设置其他必填字段
-//        mv.setDuration(0); // 默认值，实际应解析视频
-//        mv.setFileSize(mvFile.getSize());
-//        mv.setResolution(resolution);
-//
-//    } catch (Exception e) {
-//        log.error("设置MV属性失败", e);
-//        // 属性设置失败也需要删除已上传的文件
-//        deleteUploadedFile(objectKey);
-//        return R.error("设置MV属性失败: " + e.getMessage());
-//    }
-//
-//    // 6. 保存到数据库
-//    try {
-//        int insertResult = mvMapper.insert(mv);
-//        if (insertResult <= 0) {
-//            log.error("数据库插入失败，影响行数: {}");
-//            deleteUploadedFile(objectKey);
-//            return R.error("数据库保存失败");
-//        }
-//    } catch (DataIntegrityViolationException e) {
-//        log.error("数据库约束违反", e);
-//        deleteUploadedFile(objectKey);
-//        return R.error("数据库保存失败: 字段约束错误 - " + e.getRootCause().getMessage());
-//    } catch (Exception e) {
-//        log.error("数据库操作异常", e);
-//        deleteUploadedFile(objectKey);
-//        return R.error("数据库保存失败: " + e.getMessage());
-//    }
-//
-//    // 7. 返回成功响应
-//    try {
-//        return R.success("MV添加成功", new HashMap<String, Object>() {{
-//            put("id", mv.getId());
-//            put("url", storeUrlPath);
-//        }});
-//    } catch (Exception e) {
-//        log.error("构建响应失败", e);
-//        return R.error("操作成功但构建响应失败");
-//    }
-//}
-//
-//    // 辅助方法：删除已上传的文件（使用MinIO对象键）
-//    private void deleteUploadedFile(String objectKey) {
-//        if (objectKey == null) return;
-//
-//        try {
-//            minioClient.removeObject(
-//                    RemoveObjectArgs.builder()
-//                            .bucket(mvBucketName)
-//                            .object(objectKey) // 使用MinIO对象键
-//                            .build());
-//            log.error("已删除上传失败的文件: {}");
-//        } catch (Exception e) {
-//            log.error("删除文件失败: {}");
-//        }
-//    }
     @Override
     public R updateMvMsg(MvRequest updateMvRequest) {
         Mv mv = new Mv();
@@ -245,12 +150,6 @@ public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvServic
             return R.error("MV信息更新失败");
         }
     }
-
-//    @Override
-//    public R updateMvUrl(MultipartFile mvFile, int id) {
-//        Mv mv =new Mv();
-//        return null;
-//    }
 
     @Override
     public R updateMvUrl(MultipartFile mvFile, int id) {
@@ -305,7 +204,8 @@ public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvServic
             return R.error("MV文件更新失败");
         }
     }
-//TUDO: 更改封面图片
+
+    //TUDO: 更改封面图片
     @Override
     public R updateMvPic(MultipartFile picFile, int id) {
         return null;
@@ -315,8 +215,13 @@ public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvServic
     @Override
     public R deleteMv(Integer id) {
         Mv mv = mvMapper.selectById(id);
-        //TODO需要新加一个判断是否存在,通过判断path是否为空来判断是否存在；
+        if (mv == null) {
+            return R.error("MV不存在或已被删除");
+        }
         String path = mv.getStorageKey();
+        if (path == null || path.equals("null")){
+            return R.error("MV不存在");
+        }
         String[] parts = path.split("/");
         String fileName = parts[parts.length - 1];
         try {
@@ -358,16 +263,17 @@ public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvServic
     @Override
     public R mvOfSingerName(String name) {
         QueryWrapper<Mv> querywrapper = new QueryWrapper<>();
-        querywrapper.like("singer_name",name);
+        querywrapper.like("singer_name", name);
         List<Mv> mvList = mvMapper.selectList(querywrapper);
-        if(mvList.isEmpty()){
+        if (mvList.isEmpty()) {
             return R.error("没有找到该歌手的MV");
         }
 //        return R.success("null", mvMapper.selectList(querywrapper));
         return R.success("null", mvList);
     }
 
-//TODO: 预览图，后面做
+    //TODO: 视频预览,即鼠标放上去就播放?
+    //TODO: 视频封面,用户自行上传或者自动截取视频开头
     @Override
     public R updateMvPreview(MultipartFile previewFile, int id) {
         return null;
@@ -413,6 +319,12 @@ public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvServic
             return R.error("没有找到该歌曲的MV");
         }
         return R.success("null", mvList);
+    }
+
+    @Override
+    public R addMvPic(MultipartFile picFile, int id) {
+
+        return null;
     }
 
 }

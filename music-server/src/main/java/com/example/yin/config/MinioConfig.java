@@ -1,12 +1,18 @@
 package com.example.yin.config;
 
 import io.minio.MinioClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.PostConstruct;
+
 @Configuration
 public class MinioConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(MinioConfig.class);
 
     @Value("${minio.endpoint}")
     private String minioEndpoint;
@@ -17,10 +23,11 @@ public class MinioConfig {
     @Value("${minio.secret-key}")
     private String minioSecretKey;
 
-    //TODO:还需要完成自动创建桶
+    //TODO:还需要完成自动创建桶,docker实现
+    //mp3文件的桶
     @Value("${minio.bucket-name}")
     private String bucketName;
-
+    //MP4文件的桶
     @Value("${minio.mv-bucket}")
     private String mvBucket;
 
@@ -31,4 +38,5 @@ public class MinioConfig {
                 .credentials(minioAccessKey, minioSecretKey)
                 .build();
     }
+
 }
