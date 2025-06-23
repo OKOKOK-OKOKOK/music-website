@@ -19,6 +19,10 @@ nacos + Sentinel + Spring Cloud Gateway + Spring Cloud Alibaba
 
 数据库修改，
 mv_url,+播放器；
+mv分片上传；
+需要支持本地上传；
+云服务器；
+minioupoadcontroller可以重构，代码很重复；
 
 TODO：歌曲表，增加收藏数量，播放次数，评论次数；
 

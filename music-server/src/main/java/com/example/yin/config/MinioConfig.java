@@ -17,6 +17,13 @@ public class MinioConfig {
     @Value("${minio.secret-key}")
     private String minioSecretKey;
 
+    //TODO:还需要完成自动创建桶
+    @Value("${minio.bucket-name}")
+    private String bucketName;
+
+    @Value("${minio.mv-bucket}")
+    private String mvBucket;
+
     @Bean
     public MinioClient minioClient() {
         return MinioClient.builder()
