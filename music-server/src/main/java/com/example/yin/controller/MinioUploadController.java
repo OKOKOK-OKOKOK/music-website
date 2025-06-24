@@ -27,8 +27,8 @@ public class MinioUploadController {
 
     private static MinioClient minioClient;
     private static String bucketName;
-
-    public static void init(){
+    private static String mvBucketName;
+    public static void init() {
         Properties properties = new Properties();
         try {
             // 使用类加载器获取资源文件的输入流
@@ -39,13 +39,16 @@ public class MinioUploadController {
                 String minioAccessKey = properties.getProperty("minio.access-key");
                 String minioSecretKey = properties.getProperty("minio.secret-key");
                 String minioBucketName = properties.getProperty("minio.bucket-name");
+                String minioMvBucketName = properties.getProperty("minio.mv-bucket");
+
+                mvBucketName = minioMvBucketName;
                 bucketName = minioBucketName;
                 minioClient = MinioClient.builder()
                         .endpoint(minioEndpoint)
                         .credentials(minioAccessKey, minioSecretKey)
                         .build();
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
     }
@@ -77,7 +80,7 @@ public class MinioUploadController {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
-                            .object("/singer/img/"+file.getOriginalFilename())
+                            .object("/singer/img/" + file.getOriginalFilename())
                             .stream(inputStream, inputStream.available(), -1)
                             .contentType(file.getContentType())
                             .build()
@@ -97,7 +100,7 @@ public class MinioUploadController {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
-                            .object("/songlist/"+file.getOriginalFilename())
+                            .object("/songlist/" + file.getOriginalFilename())
                             .stream(inputStream, inputStream.available(), -1)
                             .contentType(file.getContentType())
                             .build()
@@ -117,7 +120,7 @@ public class MinioUploadController {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
-                            .object("/singer/song/"+file.getOriginalFilename())
+                            .object("/singer/song/" + file.getOriginalFilename())
                             .stream(inputStream, inputStream.available(), -1)
                             .contentType(file.getContentType())
                             .build()
@@ -138,7 +141,79 @@ public class MinioUploadController {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
-                            .object("/img/avatorImages/"+file.getOriginalFilename())
+                            .object("/img/avatorImages/" + file.getOriginalFilename())
+                            .stream(inputStream, inputStream.available(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+            return "File uploaded successfully!";
+        } catch (MinioException | IOException | NoSuchAlgorithmException | InvalidKeyException e) {
+            e.printStackTrace();
+            return "Error uploading file to MinIO: " + e.getMessage();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //TODO: 分片上传
+    //TODO: 断点续传
+    //TODO: 上传进度条
+    //TODO: 上传失败重试机制
+    //TODO: 参数检测机制
+    //mv文件上传
+    public static String uploadMvFile(MultipartFile file) {
+        try {
+            init();
+            InputStream inputStream = file.getInputStream();
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(mvBucketName)
+                            .object("mv/" + file.getOriginalFilename())
+                            .stream(inputStream, inputStream.available(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+            return "File uploaded successfully!";
+        } catch (MinioException | IOException | NoSuchAlgorithmException | InvalidKeyException e) {
+            e.printStackTrace();
+            return "Error uploading file to MinIO: " + e.getMessage();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    //mv封面
+    public static String uploadMvCoverFile(MultipartFile file) {
+        try {
+            init();
+            InputStream inputStream = file.getInputStream();
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object("mv/covers/" + file.getOriginalFilename())
+                            .stream(inputStream, inputStream.available(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+            return "File uploaded successfully!";
+        } catch (MinioException | IOException | NoSuchAlgorithmException | InvalidKeyException e) {
+            e.printStackTrace();
+            return "Error uploading file to MinIO: " + e.getMessage();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //mv预览片段
+    public static String uploadMvPreviewFile(MultipartFile file) {
+        try {
+            init();
+            InputStream inputStream = file.getInputStream();
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object("mv/previews/" + file.getOriginalFilename())
                             .stream(inputStream, inputStream.available(), -1)
                             .contentType(file.getContentType())
                             .build()
@@ -152,3 +227,83 @@ public class MinioUploadController {
         }
     }
 }
+
+    // mv文件
+//
+//    /**
+//     * 上传mv
+//     */
+//    public static String uploadMvFile(MultipartFile file) {
+//        return uploadMvFile(file, null);
+//    }
+//
+//    /**
+//     * Upload MV file with custom path
+//     * @param file MV file to upload
+//     * @param resolution Optional resolution subfolder (hd/sd/4k)
+//     */
+//    public static String uploadMvFile(MultipartFile file, String resolution) {
+//        try {
+//            init();
+//            String objectPath = "mv/" + (resolution != null ? resolution + "/" : "") + file.getOriginalFilename();
+//
+//            InputStream inputStream = file.getInputStream();
+//            minioClient.putObject(
+//                    PutObjectArgs.builder()
+//                            .bucket(bucketName)
+//                            .object(objectPath)
+//                            .stream(inputStream, inputStream.available(), -1)
+//                            .contentType(file.getContentType())
+//                            .build()
+//            );
+//            return "MV uploaded successfully!";
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "Error uploading MV: " + e.getMessage();
+//        }
+//    }
+//
+//    /**
+//     * Upload MV cover image
+//     */
+//    public static String uploadMvCoverFile(MultipartFile file) {
+//        try {
+//            init();
+//            InputStream inputStream = file.getInputStream();
+//            minioClient.putObject(
+//                    PutObjectArgs.builder()
+//                            .bucket(bucketName)
+//                            .object("mv/covers/"+file.getOriginalFilename())
+//                            .stream(inputStream, inputStream.available(), -1)
+//                            .contentType(file.getContentType())
+//                            .build()
+//            );
+//            return "MV cover uploaded successfully!";
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "Error uploading MV cover: " + e.getMessage();
+//        }
+//    }
+//
+//    /**
+//     * Upload MV preview clip
+//     */
+//    public static String uploadMvPreviewFile(MultipartFile file) {
+//        try {
+//            init();
+//            InputStream inputStream = file.getInputStream();
+//            minioClient.putObject(
+//                    PutObjectArgs.builder()
+//                            .bucket(bucketName)
+//                            .object("mv/previews/"+file.getOriginalFilename())
+//                            .stream(inputStream, inputStream.available(), -1)
+//                            .contentType(file.getContentType())
+//                            .build()
+//            );
+//            return "MV preview uploaded successfully!";
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "Error uploading MV preview: " + e.getMessage();
+//        }
+//    }
+

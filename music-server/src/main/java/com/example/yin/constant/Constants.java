@@ -11,6 +11,14 @@ public class Constants {
     public static String SINGER_PIC_PATH = "file:" + ASSETS_PATH + "/img/singerPic/";
     public static String BANNER_PIC_PATH = "file:" + ASSETS_PATH + "/img/swiper/";
 
+    /* MV相关存储路径 */
+    public static String MV_PATH = "file:" + ASSETS_PATH + "/mv/";
+    public static String MV_HD_PATH = "file:" + ASSETS_PATH + "/mv/hd/";     // 高清版本
+    public static String MV_SD_PATH = "file:" + ASSETS_PATH + "/mv/sd/";     // 标清版本
+    public static String MV_PREVIEW_PATH = "file:" + ASSETS_PATH + "/mv/preview/"; // 预览图
+    public static String MV_COVER_PATH = "file:" + ASSETS_PATH + "/img/mvCover/";  // 封面图
+
     /* 盐值加密 */
     public static String SALT = "zyt";
+
 }

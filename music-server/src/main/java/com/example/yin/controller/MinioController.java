@@ -17,6 +17,12 @@ import java.io.InputStream;
 public class MinioController {
     @Value("${minio.bucket-name}")
     private String bucketName;
+
+    @Value("${minio.mv-bucket}")
+    private String mvBucket;  // 新增MV专用bucket
+
+    //TODO: Minio的用户权限设置;
+
     @Autowired
     private MinioClient minioClient;
     //获取歌曲
@@ -114,4 +120,80 @@ public class MinioController {
 
         return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
     }
+
+
+    //mv下载
+    @GetMapping("/mv/{resolution}/{fileName:.+}")
+    public ResponseEntity<byte[]> getMvFile(
+            @PathVariable String resolution,
+            @PathVariable String fileName) throws Exception {
+        InputStream stream = minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(mvBucket)
+                        .object("mv/"+resolution+"/"+fileName)
+                        .build()
+        );
+
+        byte[] bytes = IOUtils.toByteArray(stream);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentLength(bytes.length);
+
+        return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+    }
+
+    //mv封面下载
+    @GetMapping("/mv/covers/{fileName:.+}")
+    public ResponseEntity<byte[]> getMvCover(@PathVariable String fileName) throws Exception {
+        InputStream stream = minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(mvBucket)
+                        .object("mv/covers/"+fileName)
+                        .build()
+        );
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
+        return new ResponseEntity<>(IOUtils.toByteArray(stream), headers, HttpStatus.OK);
+    }
+
+
+
 }
+//
+//    // 新增MV文件下载
+//    @GetMapping("/mv/{resolution}/{fileName:.+}")
+//    public ResponseEntity<byte[]> getMvFile(
+//            @PathVariable String resolution,
+//            @PathVariable String fileName) throws Exception {
+//
+//        InputStream stream = minioClient.getObject(
+//                GetObjectArgs.builder()
+//                        .bucket(bucketName)  // 或使用mvBucketName
+//                        .object("mv/"+resolution+"/"+fileName)
+//                        .build()
+//        );
+//
+//        byte[] bytes = IOUtils.toByteArray(stream);
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+//        headers.setContentLength(bytes.length);
+//
+//        return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+//    }
+//    // 新增MV封面下载
+//    @GetMapping("/mv/covers/{fileName:.+}")
+//    public ResponseEntity<byte[]> getMvCover(@PathVariable String fileName) throws Exception {
+//        InputStream stream = minioClient.getObject(
+//                GetObjectArgs.builder()
+//                        .bucket(bucketName)
+//                        .object("mv/covers/"+fileName)
+//                        .build()
+//        );
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.IMAGE_JPEG);
+//
+//        return new ResponseEntity<>(IOUtils.toByteArray(stream), headers, HttpStatus.OK);
+//    }

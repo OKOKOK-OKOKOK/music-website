@@ -333,3 +333,34 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2023-04-25 22:12:48
+
+-- Below is the code of MV
+DROP TABLE IF EXISTS `mv`;
+/*!40101 SET @saved_cs_client = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `mv`
+(
+    `id`           INT(10) UNSIGNED                 NOT NULL AUTO_INCREMENT,
+    `song_id`      INT(10) UNSIGNED                 COMMENT '关联歌曲ID',
+    `title`        VARCHAR(100)                     DEFAULT 'title' COMMENT 'MV标题（可不同于歌曲名）',
+    `version`      ENUM ('official','live现场版','dance舞蹈版','二创','OST','其他')                              DEFAULT 'official' COMMENT '版本（official官方版/live现场版/dance舞蹈版等）',
+    `resolution`   ENUM ('SD','HD','FHD','4K','8K')  DEFAULT 'HD' COMMENT '分辨率',
+    `storage_key`   VARCHAR(255)                     NOT NULL COMMENT '存储路径,先试着本地存储',
+    `duration`     INT(10) UNSIGNED                  COMMENT '时长（秒）',
+    `file_size`    BIGINT(20) UNSIGNED               COMMENT '文件大小（字节）',
+    `is_official`  TINYINT(1)                        DEFAULT 1 COMMENT '是否官方MV',
+    `director`     VARCHAR(100)                              DEFAULT NULL COMMENT '导演',
+    `release_date` DATE                                      DEFAULT NULL COMMENT 'MV发行日期',
+    `create_time`  DATETIME                         ,
+    `update_time`  DATETIME                         ,
+    PRIMARY KEY (`id`),
+    KEY `idx_song_id` (`song_id`),
+    KEY `idx_resolution` (`resolution`),
+    CONSTRAINT `fk_mv_song`
+        FOREIGN KEY (`song_id`)
+            REFERENCES `song` (`id`)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;

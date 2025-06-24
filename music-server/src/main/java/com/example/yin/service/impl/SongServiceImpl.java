@@ -232,4 +232,9 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements So
             return R.error("更新失败");
         }
     }
+
+    @Override
+    public boolean existSong(Integer songId) {
+        return songMapper.selectById(songId) != null;
+    }
 }

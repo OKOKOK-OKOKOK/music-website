@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.yin.mapper.MvMapper">
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.example.yin.model.domain.Mv">
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="song_id" property="songId" jdbcType="INTEGER" />
+        <result column="title" property="title" jdbcType="VARCHAR" />
+        <result column="version" property="version" jdbcType="VARCHAR" />
+        <result column="resolution" property="resolution" jdbcType="VARCHAR" />
+        <result column="storage_key" property="storageKey" jdbcType="VARCHAR" />
+        <result column="duration" property="duration" jdbcType="INTEGER" />
+        <result column="file_size" property="fileSize" jdbcType="BIGINT" />
+        <result column="is_official" property="isofficial" jdbcType="TINYINT" />
+        <result column="director" property="director" jdbcType="VARCHAR" />
+        <result column="release_date" property="releaseDate" jdbcType="DATE" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <!-- 扩展结果映射（包含关联信息） -->
+    <resultMap id="ResultMapWithAssociations" type="com.example.yin.model.domain.Mv" extends="BaseResultMap">
+        <result column="song_name" property="songName" jdbcType="VARCHAR" />
+        <result column="singer_name" property="singerName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <!-- 基础列名列表 -->
+    <sql id="Base_Column_List">
+        id, song_id, title, version, resolution, storage_key, duration,
+    file_size, is_official, director, release_date, create_time, update_time
+    </sql>
+
+    <!-- 关联查询列名列表 -->
+    <sql id="Association_Column_List">
+        s.name as song_name, sr.name as singer_name
+    </sql>
+
+
+    <select id="selectUserCollect" resultType="java.lang.Integer">
+        SELECT id
+        FROM user_collect_mv
+        WHERE consumer_id = #{consumer_id} AND mv_id = #{mv_id}
+            LIMIT 1
+    </select>
+
+    <!-- 增强的歌曲关联查询 -->
+    <select id="selectBySongId" resultMap="ResultMapWithAssociations">
+        SELECT
+        <include refid="Base_Column_List" />,
+        <include refid="Association_Column_List" />
+        FROM mv m
+        LEFT JOIN song s ON m.song_id = s.id
+        LEFT JOIN singer sr ON s.singer_id = sr.id
+        WHERE m.song_id = #{song_id}
+        ORDER BY m.is_official DESC, m.create_time DESC
+    </select>
+
+    <!-- 新增：根据ID查询MV详情（带关联信息） -->
+    <select id="selectMvDetailById" resultMap="ResultMapWithAssociations">
+        SELECT
+        <include refid="Base_Column_List" />,
+        <include refid="Association_Column_List" />
+        FROM mv m
+        LEFT JOIN song s ON m.song_id = s.id
+        LEFT JOIN singer sr ON s.singer_id = sr.id
+        WHERE m.id = #{id}
+    </select>
+</mapper>
