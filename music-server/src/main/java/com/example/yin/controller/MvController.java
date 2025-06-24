@@ -18,8 +18,7 @@ public class MvController {
     public R addMv(MvRequest addMvRequest, @RequestParam("file") MultipartFile mvFile) {
         return mvService.addMv(addMvRequest, mvFile);
     }
-
-
+    
     // 删除MV
     @DeleteMapping("/mv/delete")
     public R deleteMv(@RequestParam int id) {
