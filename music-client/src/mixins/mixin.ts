@@ -15,6 +15,25 @@ export default function () {
   const store = useStore();
   const token = computed(() => store.getters.token);
 
+  //txm
+  // 播放
+
+  function playMusic({ id, url, pic, index, name, lyric, currentSongList, videoUrl }) {
+    const songTitle = getSongTitle(name);
+    const singerName = getSingerName(name);
+    proxy.$store.dispatch("playMusic", {
+      id,
+      url,
+      pic,
+      index,
+      songTitle,
+      singerName,
+      lyric,
+      currentSongList,
+      videoUrl,
+    });
+  }
+
   function getUserSex(sex) {
     if (sex === 0) {
       return "女";
@@ -46,22 +65,22 @@ export default function () {
     }
     return true;
   }
-
-  // 播放
-  function playMusic({ id, url, pic, index, name, lyric, currentSongList }) {
-    const songTitle = getSongTitle(name);
-    const singerName = getSingerName(name);
-    proxy.$store.dispatch("playMusic", {
-      id,
-      url,
-      pic,
-      index,
-      songTitle,
-      singerName,
-      lyric,
-      currentSongList,
-    });
-  }
+  //
+  // // 播放
+  // function playMusic({ id, url, pic, index, name, lyric, currentSongList }) {
+  //   const songTitle = getSongTitle(name);
+  //   const singerName = getSingerName(name);
+  //   proxy.$store.dispatch("playMusic", {
+  //     id,
+  //     url,
+  //     pic,
+  //     index,
+  //     songTitle,
+  //     singerName,
+  //     lyric,
+  //     currentSongList,
+  //   });
+  // }
 
   function getFileName(path) {
     const parts = path.split('/');

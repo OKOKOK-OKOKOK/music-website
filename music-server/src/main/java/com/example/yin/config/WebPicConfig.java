@@ -41,6 +41,10 @@ public class WebPicConfig implements WebMvcConfigurer {
                 .addResourceLocations(Constants.MV_PREVIEW_PATH);
         registry.addResourceHandler("/img/mvCover/**")
                 .addResourceLocations(Constants.MV_COVER_PATH);
+
+        //txm
+        registry.addResourceHandler("/video/**")
+                .addResourceLocations(Constants.VIDEO_PATH);
     }
 
 }

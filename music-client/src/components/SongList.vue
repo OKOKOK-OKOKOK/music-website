@@ -36,7 +36,6 @@ import { MoreFilled, Delete, Download } from "@element-plus/icons-vue";
 import mixin from "@/mixins/mixin";
 import { HttpManager } from "@/api";
 import { Icon } from "@/enums";
-
 export default defineComponent({
   components: {
     MoreFilled,
@@ -63,6 +62,7 @@ export default defineComponent({
     const songUrl = computed(() => store.getters.songUrl);
     const singerName = computed(() => store.getters.singerName);
     const songTitle = computed(() => store.getters.songTitle);
+    const videoUrl = computed(() => store.getters.videoUrl);
     const dataList = computed(() => {
       const list = [];
       songList.value.forEach((item: any, index) => {
@@ -83,6 +83,7 @@ export default defineComponent({
         name: row.name,
         lyric: row.lyric,
         currentSongList: songList.value,
+        videoUrl:row.videoUrl,
       });
     }
 
@@ -116,6 +117,7 @@ export default defineComponent({
       handleEdit,
       downloadMusic,
       deleteCollection,
+      videoUrl,
     };
   },
 });

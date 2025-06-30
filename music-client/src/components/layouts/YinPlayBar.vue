@@ -1,3 +1,4 @@
+
 <template>
   <div class="play-bar" :class="{ show: !toggle }">
     <div class="fold" :class="{ turn: toggle }">
@@ -8,9 +9,9 @@
     <div class="control-box">
       <div class="info-box">
         <!--歌曲图片-->
-      <div @click="goPlayerPage">
-         <el-image class="song-bar-img" fit="contain"/>
-      </div>
+        <div @click="goPlayerPage">
+          <el-image class="song-bar-img" fit="contain"/>
+        </div>
         <!--播放开始结束时间-->
         <div v-if="songId">
           <div class="song-info">{{ this.songTitle }} - {{ this.singerName }}</div>
@@ -56,10 +57,22 @@
             })
           "
         ></yin-icon>
+        <!--视频-->
+        <yin-icon
+            class="yin-play-show"
+            :icon="iconList.download"
+            @click="
+            videoPlay({
+              videoUrl,
+              name: singerName + '-' + songTitle,
+            })
+          "
+        ></yin-icon>
         <!--歌曲列表-->
         <yin-icon :icon="iconList.LIEBIAO" @click="changeAside"></yin-icon>
       </div>
     </div>
+    <VideoModal v-if="showVideoModal" :visible="showVideoModal" :videoUrl="fullVideoUrl" @close="showVideoModal = false" />
   </div>
 </template>
 
@@ -71,10 +84,12 @@ import YinIcon from "./YinIcon.vue";
 import {HttpManager} from "@/api";
 import {formatSeconds} from "@/utils";
 import {Icon, RouterName} from "@/enums";
+import VideoModal from "@/components/VideoModal.vue";
 
 export default defineComponent({
   components: {
     YinIcon,
+    VideoModal,
   },
   setup() {
     const {proxy} = getCurrentInstance();
@@ -124,7 +139,6 @@ export default defineComponent({
     onMounted(() => {
       if (songIdVO.value) initCollection();
     });
-
     return {
       isCollection,
       playMusic,
@@ -145,6 +159,8 @@ export default defineComponent({
       playState: Icon.XUNHUAN,
       playStateList: [Icon.XUNHUAN, Icon.LUANXU],
       playStateIndex: 0,
+      showVideoModal: false,
+      fullVideoUrl:"",
       iconList: {
         download: Icon.XIAZAI,
         ZHEDIE: Icon.ZHEDIE,
@@ -155,6 +171,7 @@ export default defineComponent({
         LIEBIAO: Icon.LIEBIAO,
         dislike: Icon.Dislike,
         like: Icon.Like,
+        video:Icon.VIDEO,
       },
     };
   },
@@ -174,6 +191,7 @@ export default defineComponent({
       "currentPlayIndex", // 当前歌曲在歌曲列表的位置
       "showAside", // 是否显示侧边栏
       "autoNext", // 用于触发自动播放下一首
+      "videoUrl",//视频地址
     ]),
   },
   watch: {
@@ -211,6 +229,18 @@ export default defineComponent({
       this.playStateIndex = this.playStateIndex >= this.playStateList.length - 1 ? 0 : ++this.playStateIndex;
       this.playState = this.playStateList[this.playStateIndex];
     },
+
+    videoPlay  (payload: { videoUrl: string; songName: string }) {
+      if (!payload.videoUrl) {
+        (this as any).$message.warning("暂无视频资源");
+        return;
+      }
+      this.fullVideoUrl = payload.videoUrl.startsWith("http")
+          ? payload.videoUrl
+          : `http://localhost:8888${payload.videoUrl.startsWith("/") ? "" : "/"}${payload.videoUrl}`;
+
+      this.showVideoModal = true;
+    },
     // 上一首
     prev() {
       if (this.playState === Icon.LUANXU) {
@@ -228,7 +258,7 @@ export default defineComponent({
         }
       }
     },
-    // 下一首
+
     next() {
       if (this.playState === Icon.LUANXU) {
         let playIndex = Math.floor(Math.random() * this.currentPlayList.length);
@@ -245,6 +275,7 @@ export default defineComponent({
         }
       }
     },
+
     // 选中播放
     toPlay(url) {
       if (url && url !== this.songUrl) {
@@ -257,6 +288,7 @@ export default defineComponent({
           name: song.name,
           lyric: song.lyric,
           currentSongList: this.currentPlayList,
+          videoUrl: song.videoUrl,
         });
       }
     },
