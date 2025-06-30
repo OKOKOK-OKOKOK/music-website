@@ -6,16 +6,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import {defineComponent} from "vue";
 import YinNav from "@/components/layouts/YinNav.vue";
 import SearchSong from "./SearchSong.vue";
 import SearchSongList from "./SearchSongList.vue";
+import SearchMv from "@/views/search/SearchMv.vue";
 
 export default defineComponent({
   components: {
     YinNav,
     SearchSong,
     SearchSongList,
+    //添加一个新增加的mv搜索组件
+    SearchMv,
   },
   data() {
     return {
@@ -27,6 +30,11 @@ export default defineComponent({
         {
           name: "歌单",
           value: "SearchSongList",
+        },
+        //添加一个新增加的mv搜索组件
+        {
+          name: "MV",
+          value: "SearchMv",
         },
       ],
       activeName: "歌曲",
@@ -49,7 +57,7 @@ export default defineComponent({
 .search {
   margin: auto;
   width: 900px;
-  
+
   .search-list {
     min-height: 480px;
   }

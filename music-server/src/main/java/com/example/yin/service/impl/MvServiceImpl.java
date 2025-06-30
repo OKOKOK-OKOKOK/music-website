@@ -264,6 +264,7 @@ public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvServic
     public R mvOfSingerName(String name) {
         QueryWrapper<Mv> querywrapper = new QueryWrapper<>();
         querywrapper.like("singer_name", name);
+        //但是mv表中没有这个字段,需要修改
         List<Mv> mvList = mvMapper.selectList(querywrapper);
         if (mvList.isEmpty()) {
             return R.error("没有找到该歌手的MV");
@@ -272,8 +273,18 @@ public class MvServiceImpl extends ServiceImpl<MvMapper, Mv> implements MvServic
         return R.success("null", mvList);
     }
 
-    //TODO: 视频预览,即鼠标放上去就播放?
-    //TODO: 视频封面,用户自行上传或者自动截取视频开头
+
+    @Override
+    public R mvOfSongName(String name) {
+        QueryWrapper<Mv> querywrapper = new QueryWrapper<>();
+        querywrapper.like("song_name", name);
+        List<Mv> mvList = mvMapper.selectList(querywrapper);
+        if (mvList.isEmpty()) {
+            return R.error("没有找到该歌曲的MV");
+        }
+        return R.success("null", mvList);
+    }
+
     @Override
     public R updateMvPreview(MultipartFile previewFile, int id) {
         return null;

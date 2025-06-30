@@ -37,6 +37,8 @@ public interface MvService extends IService<Mv> {
     //根据歌手名字查询mv
     R mvOfSingerName(String name);
 
+    //根据歌曲名字查询mv
+    R mvOfSongName(String name);
     //todo更新视频预览?
     R updateMvPreview(MultipartFile previewFile, int id);
 

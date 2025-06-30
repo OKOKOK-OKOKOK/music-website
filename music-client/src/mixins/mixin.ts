@@ -33,6 +33,7 @@ export default function () {
     return str.split("-")[0];
   }
 
+  //TODO: 好像判断登录失效了?
   // 判断登录状态
   function checkStatus(status?: boolean) {
     if (!token.value) {

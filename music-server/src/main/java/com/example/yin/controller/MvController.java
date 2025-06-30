@@ -13,12 +13,12 @@ public class MvController {
     @Autowired
     private MvService mvService;
 
+    //----------mv增加与删除
      //添加MV
     @PostMapping("/mv/add")
     public R addMv(MvRequest addMvRequest, @RequestParam("file") MultipartFile mvFile) {
         return mvService.addMv(addMvRequest, mvFile);
     }
-
 
     // 删除MV
     @DeleteMapping("/mv/delete")
@@ -26,24 +26,43 @@ public class MvController {
         return mvService.deleteMv(id);
     }
 
+    //----------------------------------获取mv
     // 获取所有MV
     @GetMapping("/mv")
     public R allMv() {
         return mvService.allMv();
     }
 
+    //根据歌歌手名字获取对应的mv
+    @GetMapping("/mv/singer/singername")
+    public R mvOfSingerName(@RequestParam String name) {
+        return mvService.mvOfSingerName(name);
+    }
+
+    //根据歌曲名字获取mv
+    @GetMapping("/mv/song/songname")
+    public R mvOfSongName(@RequestParam String name) {
+        return mvService.mvOfSongName(name);
+    }
+
     // 根据歌曲ID获取MV
-    @GetMapping("/mv/song/detail")
+    @GetMapping("/mv/song/songid")
     public R mvOfSongId(@RequestParam int songId) {
         return mvService.mvOfSongId(songId);
     }
 
     // 根据歌手ID获取MV
-    @GetMapping("/mv/singer/detail")
+    @GetMapping("/mv/singer/singerid")
     public R mvOfSingerId(@RequestParam int singerId) {
         return mvService.mvOfSingerId(singerId);
     }
 
+    // 获取MV播放地址
+    @GetMapping("/mv/url")
+    public R getMvUrl(@RequestParam int id, @RequestParam(required = false) String resolution) {
+        return mvService.getMvUrl(id, resolution);
+    }
+    //----------------------------------更新mv
     // 更新MV信息
     @PutMapping("/mv/update")
     public R updateMvMsg(@RequestBody MvRequest updateMvRequest) {
@@ -62,9 +81,5 @@ public class MvController {
         return mvService.updateMvPic(picFile, id);
     }
 
-    // 获取MV播放地址
-    @GetMapping("/mv/url")
-    public R getMvUrl(@RequestParam int id, @RequestParam(required = false) String resolution) {
-        return mvService.getMvUrl(id, resolution);
-    }
+
 }
